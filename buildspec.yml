@@ -25,7 +25,7 @@ phases:
       - echo "Getting AWS account ID and region..."
       # - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       # - REGION=$(aws configure get region)
-      - REPOSITORY_URI=869935099937.dkr.ecr.us-east-1.amazonaws.com/$REPOSITORY_NAME
+      - REPOSITORY_URI=535002855046.dkr.ecr.us-east-1.amazonaws.com/cicdpipeline
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=${COMMIT_HASH:=latest}
       - echo "ECR URI:$REPOSITORY_URI"
