@@ -9,57 +9,45 @@ phases:
     runtime-versions:
       python: 3.9
     commands:
-      - echo "Installing dependencies..."
+      - echo "Installing dependencies and running tests..."
+      - echo Logging in to Amazon ECR...
       - apt-key adv --refresh-keys --keyserver keyserver.ubuntu.com
       - rm -rf /etc/apt/source.list.d/sbt.list || true
       - apt-get update -y
       - python --version
       - pip install --upgrade pip
       - pip install awscli --upgrade
+      - echo "Getting AWS account ID and region..."
 
   pre_build:
     commands:
       - echo Entered the pre_build phase...
-      - REPOSITORY_URI=535002855046.dkr.ecr.us-east-1.amazonaws.com/cicdpipeline
+      - echo "Getting AWS account ID and region..."
+      - REPOSITORY_URI=869935099937.dkr.ecr.us-east-1.amazonaws.com/$REPOSITORY_NAME
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=${COMMIT_HASH:=latest}
       - echo "ECR URI: $REPOSITORY_URI"
       - echo "Tag: $IMAGE_TAG"
       - echo "Logging into ECR..."
-      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin "$REPOSITORY_URI"
+      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $REPOSITORY_URI
 
   build:
     commands:
       - echo Entered the build phase...
       - echo Build started on `date`
-      - docker build --build-arg ENV=prod -t "$REPOSITORY_NAME:latest" .
-      - docker tag "$REPOSITORY_NAME:latest" "$REPOSITORY_URI:latest"
-      - docker tag "$REPOSITORY_NAME:latest" "$REPOSITORY_URI:$IMAGE_TAG"
+      - docker build --build-arg ENV=prod -t $REPOSITORY_NAME:latest .
+      - docker tag $REPOSITORY_NAME:latest $REPOSITORY_URI:latest
+      - docker tag $REPOSITORY_NAME:latest $REPOSITORY_URI:$IMAGE_TAG
 
   post_build:
     commands:
       - echo Build completed on `date`
-      - echo Pushing Docker image to ECR...
-      - docker push "$REPOSITORY_URI:latest"
-      - docker push "$REPOSITORY_URI:$IMAGE_TAG"
-
-      - echo Creating imagedefinitions.json for ECS...
-      - printf '[{"name":"MyContainer","imageUri":"%s"}]' "$REPOSITORY_URI:$IMAGE_TAG" > imagedefinitions.json
-
-      - echo Writing appspec.yaml...
-      - |
-        printf "%s\n" \
-        "version: 1" \
-        "Resources:" \
-        "  - TargetService:" \
-        "      Type: AWS::ECS::Service" \
-        "      Properties:" \
-        "        TaskDefinition: InfraStackMyTaskDef93E1369E" \
-        "        LoadBalancerInfo:" \
-        "          ContainerName: MyContainer" \
-        "          ContainerPort: 80" > appspec.yaml
+      - echo "Pushing Docker image to ECR..."
+      - docker push $REPOSITORY_URI:latest
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - echo "Creating imagedefinitions.json for ECS..."
+      - printf '[{"name":"cicdpipeline","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
 
 artifacts:
   files:
-    - appspec.yaml
-    - imagedefinitions.json
+    - '**/*'
