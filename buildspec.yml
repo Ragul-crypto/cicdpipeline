@@ -20,28 +20,28 @@ phases:
   pre_build:
     commands:
       - echo Entered the pre_build phase...
-      - REPOSITORY_URI=535002855046.dkr.ecr.us-east-1.amazonaws.com/cicdpipeline
+      - REPOSITORY_URI="535002855046.dkr.ecr.us-east-1.amazonaws.com/cicdpipeline"
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-      - IMAGE_TAG=${COMMIT_HASH:=latest}
+      - IMAGE_TAG="${COMMIT_HASH:=latest}"
       - echo "ECR URI: $REPOSITORY_URI"
       - echo "Tag: $IMAGE_TAG"
       - echo "Logging into ECR..."
-      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $REPOSITORY_URI
+      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin "$REPOSITORY_URI"
 
   build:
     commands:
       - echo Entered the build phase...
-      - echo "Build started on $(date)"
-      - docker build --build-arg ENV=prod -t $REPOSITORY_NAME:latest .
-      - docker tag $REPOSITORY_NAME:latest $REPOSITORY_URI:latest
-      - docker tag $REPOSITORY_NAME:latest $REPOSITORY_URI:$IMAGE_TAG
+      - echo Build started on `date`
+      - docker build --build-arg ENV=prod -t "$REPOSITORY_NAME:latest" .
+      - docker tag "$REPOSITORY_NAME:latest" "$REPOSITORY_URI:latest"
+      - docker tag "$REPOSITORY_NAME:latest" "$REPOSITORY_URI:$IMAGE_TAG"
 
   post_build:
     commands:
-      - echo "Build completed on $(date)"
+      - echo Build completed on `date`
       - echo Pushing Docker image to ECR...
-      - docker push $REPOSITORY_URI:latest
-      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - docker push "$REPOSITORY_URI:latest"
+      - docker push "$REPOSITORY_URI:$IMAGE_TAG"
 
       - echo Creating imagedefinitions.json for ECS...
       - echo '[{"name":"MyContainer","imageUri":"'"$REPOSITORY_URI:$IMAGE_TAG"'"}]' > imagedefinitions.json
