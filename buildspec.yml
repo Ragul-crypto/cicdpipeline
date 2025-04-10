@@ -69,7 +69,7 @@ phases:
                   TaskDefinition: "InfraStackMyTaskDef93E1369E"
                   LoadBalancerInfo:
                     ContainerName: "MyContainer"
-                    ContainerPort: 3000
+                    ContainerPort: 80
           EOF
 
 artifacts:
