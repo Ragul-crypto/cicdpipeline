@@ -1,3 +1,4 @@
+og:yaml
 version: 0.2
 
 env:
@@ -47,11 +48,16 @@ phases:
   post_build:
     commands:
         - echo Build completed on date
+        - echo Pushing the Docker images...
+        - echo "Building Docker image..."
+        - docker build -t $REPOSITORY_NAME:latest .
+        - docker tag $REPOSITORY_NAME:latest $REPOSITORY_URI:latest
+        - docker tag $REPOSITORY_NAME:latest $REPOSITORY_URI:$IMAGE_TAG
         - echo "Pushing Docker image to ECR..."
         - docker push $REPOSITORY_URI:latest
         - docker push $REPOSITORY_URI:$IMAGE_TAG
         - echo "Creating imagedefinitions.json for ECS (optional)..."
-        - printf '[{"name":"Mycontainer","imageUri":"%s"}]' "$REPOSITORY_URI:$IMAGE_TAG" > imagedefinitions.json
+        - printf '[{"name":"Mycontainer","imageUri":"535002855046.dkr.ecr.us-east-1.amazonaws.com/cicdpipeline:23bce33"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
         - echo Writing appspec.yaml...
         - |
           cat <<EOF > appspec.yaml
@@ -60,10 +66,10 @@ phases:
             - TargetService:
                 Type: AWS::ECS::Service
                 Properties:
-                  TaskDefinition: "InfraStackMyTaskDef93E1369E"
+                  TaskDefinition: "REPLACED_DURING_DEPLOYMENT"
                   LoadBalancerInfo:
-                    ContainerName: "MyContainer"
-                    ContainerPort: 80
+                    ContainerName: "Mycontainer"
+                    ContainerPort: 3000
           EOF
 
 artifacts:
