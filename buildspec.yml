@@ -56,4 +56,6 @@ phases:
         - printf '[{"name":"cicdpipeline","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
 artifacts:
   files:
+    - appspec.yaml
     - imagedefinitions.json
+  
