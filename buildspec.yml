@@ -66,7 +66,7 @@ phases:
             - TargetService:
                 Type: AWS::ECS::Service
                 Properties:
-                  TaskDefinition: "REPLACED_DURING_DEPLOYMENT"
+                  TaskDefinition: "InfraStackMyTaskDef93E1369E"
                   LoadBalancerInfo:
                     ContainerName: "Mycontainer"
                     ContainerPort: 3000
