@@ -56,7 +56,7 @@ phases:
         - docker push $REPOSITORY_URI:latest
         - docker push $REPOSITORY_URI:$IMAGE_TAG
         - echo "Creating imagedefinitions.json for ECS (optional)..."
-        - printf '[{"name":"Mycontainer","imageUri":"535002855046.dkr.ecr.us-east-1.amazonaws.com/cicdpipeline:23bce33"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+        - printf '[{"name":"mycontainer","imageUri":"535002855046.dkr.ecr.us-east-1.amazonaws.com/cicdpipeline:23bce33"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
         - echo Writing appspec.yaml...
         - |
           cat <<EOF > appspec.yaml
@@ -67,7 +67,7 @@ phases:
                 Properties:
                   TaskDefinition: "REPLACED_DURING_DEPLOYMENT"
                   LoadBalancerInfo:
-                    ContainerName: "Mycontainer"
+                    ContainerName: "mycontainer"
                     ContainerPort: 3000
           EOF
 
