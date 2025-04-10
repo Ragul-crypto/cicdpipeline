@@ -66,7 +66,7 @@ phases:
             - TargetService:
                 Type: AWS::ECS::Service
                 Properties:
-                  TaskDefinition: "InfraStackMyTaskDef93E1369E:1"
+                  TaskDefinition: "InfraStackMyTaskDef93E1369E"
                   LoadBalancerInfo:
                     ContainerName: "MyContainer"
                     ContainerPort: 3000
