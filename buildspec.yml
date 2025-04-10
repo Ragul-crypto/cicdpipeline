@@ -43,8 +43,7 @@ phases:
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       - echo "Creating imagedefinitions.json for ECS (optional)..."
-      - printf '[{"name":"Mycontainer","imageUri":"%s"}]'
-        "$REPOSITORY_URI:$IMAGE_TAG" > imagedefinitions.json
+      - echo "[{\"name\":\"MyContainer\",\"imageUri\":\"$REPOSITORY_URI:$IMAGE_TAG\"}]" > imagedefinitions.json
       - echo Writing appspec.yaml...
       - |
         cat <<EOF > appspec.yaml
@@ -53,7 +52,6 @@ phases:
           - TargetService:
               Type: AWS::ECS::Service
               Properties:
-                TaskDefinition: "InfraStackMyTaskDef93E1369E"
                 LoadBalancerInfo:
                   ContainerName: "MyContainer"
                   ContainerPort: 80
