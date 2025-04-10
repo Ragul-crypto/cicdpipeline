@@ -47,16 +47,11 @@ phases:
   post_build:
     commands:
         - echo Build completed on date
-        - echo Pushing the Docker images...
-        - echo "Building Docker image..."
-        - docker build -t $REPOSITORY_NAME:latest .
-        - docker tag $REPOSITORY_NAME:latest $REPOSITORY_URI:latest
-        - docker tag $REPOSITORY_NAME:latest $REPOSITORY_URI:$IMAGE_TAG
         - echo "Pushing Docker image to ECR..."
         - docker push $REPOSITORY_URI:latest
         - docker push $REPOSITORY_URI:$IMAGE_TAG
         - echo "Creating imagedefinitions.json for ECS (optional)..."
-        - printf '[{"name":"MyContainer","imageUri":"535002855046.dkr.ecr.us-east-1.amazonaws.com/cicdpipeline:23bce33"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+        - printf '[{"name":"MyContainer","imageUri":"%$"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
         - echo Writing appspec.yaml...
         - |
           cat <<EOF > appspec.yaml
