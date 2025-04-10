@@ -9,42 +9,29 @@ phases:
     runtime-versions:
       python: 3.9
     commands:
-      - echo "Installing dependencies and running tests..."
-      - echo "Logging in to Amazon ECR..."
-      - >-
-        apt-key adv --refresh-keys
-        --keyserver keyserver.ubuntu.com
-      - rm -rf /etc/apt/sources.list.d/sbt.list
+      - echo "Installing dependencies..."
       - apt-get update -y
-      - python --version
+      - apt-get install -y jq
       - pip install --upgrade pip
       - pip install awscli --upgrade
-      - echo "Getting AWS account ID and region..."
 
   pre_build:
     commands:
-      - echo "Entered the pre_build phase..."
-      - echo "Getting AWS account ID and region..."
+      - echo "Logging in to Amazon ECR..."
       - REPOSITORY_URI=535002855046.dkr.ecr.us-east-1.amazonaws.com/cicdpipeline
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=${COMMIT_HASH:=latest}
-      - echo "ECR URI: $REPOSITORY_URI"
-      - echo "Tag: $IMAGE_TAG"
-      - echo "Logging into ECR..."
       - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $REPOSITORY_URI
 
   build:
     commands:
-      - echo "Entered the build phase..."
-      - echo "Build started on $(date)"
+      - echo "Building Docker image..."
       - docker build -t $REPOSITORY_URI:latest .
-      - docker build --build-arg ENV=prod -t $REPOSITORY_URI:latest .
       - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
 
   post_build:
     commands:
-      - echo "Build completed on $(date)"
-      - echo "Pushing the Docker images..."
+      - echo "Pushing Docker image..."
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       - printf '[{"name":"MyContainer","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
