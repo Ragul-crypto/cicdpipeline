@@ -54,7 +54,7 @@ phases:
               Properties:
                 LoadBalancerInfo:
                   ContainerName: "MyContainer"
-                  ContainerPort: 80
+                  ContainerPort: 3000
         EOF
 artifacts:
   files:
