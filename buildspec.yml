@@ -1,50 +1,53 @@
----
 version: 0.2
+
 env:
   variables:
-    REPOSITORY_NAME: test
+    REPOSITORY_NAME: "test"
+    AWS_DEFAULT_REGION: "us-east-1"
+    CONTAINER_NAME: "MyContainer"
+    CONTAINER_PORT: "3000"  # Changed from 80 to match your appspec
+    TASK_FAMILY: "InfraStackMyTaskDef93E1369E"
+    EXECUTION_ROLE_ARN: "arn:aws:iam::535002855046:role/InfraStack-MyTaskDefExecutionRole7C814C05-KZYilu3n8JhM"
+    TASK_ROLE_ARN: "arn:aws:iam::535002855046:role/InfraStack-MyTaskDefTaskRole727F9D3B-iQmuvZC0GByO"
+    LOG_GROUP: "InfraStack-MyTaskDefMyContainerLogGroup2DC45837-pJGXpND206ay"
+
 phases:
   install:
-    runtime-version:
+    runtime-versions:
       python: 3.9
     commands:
-      - echo "Installing dependencies and running tests..."
-      - echo Logging in to Amazon ECR...
-      - apt-key adv --refresh-keys --keyserver keyserver.ubuntu.com
-      - rm -rf /etc/apt/source.list.d/sbt.list
+      - echo "Installing dependencies..."
       - apt-get update -y
       - python --version
-      - pip install --upgrade pip
-      - pip install awscli --upgrade
-      - echo "Getting AWS account ID and region..."
+      - pip install --upgrade pip awscli
+
   pre_build:
     commands:
-      - echo Entered the pre_build phase...
-      - echo "Getting AWS account ID and region..."
-      - REPOSITORY_URI=535002855046.dkr.ecr.us-east-1.amazonaws.com/cicdpipeline
+      - echo "Setting up ECR repository URI..."
+      - REPOSITORY_URI="535002855046.dkr.ecr.us-east-1.amazonaws.com/cicdpipeline"
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=${COMMIT_HASH:=latest}
-      - echo "ECR URI:$REPOSITORY_URI"
-      - echo "Tag:$IMAGE_TAG"
-      - echo "Logging into ECR..."
-      - aws ecr get-login-password --region us-east-1 | docker login --username
-        AWS --password-stdin $REPOSITORY_URI
+      - echo "ECR URI: $REPOSITORY_URI"
+      - echo "Image tag: $IMAGE_TAG"
+      - aws ecr get-login-password | docker login --username AWS --password-stdin $REPOSITORY_URI
+
   build:
     commands:
-      - echo Entered the build phase...
-      - echo Build started on date
-      - docker build -t $REPOSITORY_URI:latest .
-      - docker build --build-arg ENV=prod -t $REPOSITORY_URI:latest .
-      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
+      - echo "Building Docker image..."
+      - docker build --build-arg ENV=prod -t $REPOSITORY_URI:$IMAGE_TAG .
+      - docker tag $REPOSITORY_URI:$IMAGE_TAG $REPOSITORY_URI:latest
+
   post_build:
     commands:
-      - echo Build completed on date
-      - echo "Pushing Docker image to ECR..."
-      - docker push $REPOSITORY_URI:latest
+      - echo "Pushing images to ECR..."
       - docker push $REPOSITORY_URI:$IMAGE_TAG
-      - echo "Creating imagedefinitions.json for ECS (optional)..."
-      - echo "[{\"name\":\"MyContainer\",\"imageUri\":\"$REPOSITORY_URI:$IMAGE_TAG\"}]" > imagedefinitions.json
-      - echo Writing appspec.yaml...
+      - docker push $REPOSITORY_URI:latest
+
+      # Generate REQUIRED ECS deployment files
+      - echo "Creating imagedefinitions.json..."
+      - echo "[{\"name\":\"$CONTAINER_NAME\",\"imageUri\":\"$REPOSITORY_URI:$IMAGE_TAG\"}]" > imagedefinitions.json
+
+      - echo "Creating appspec.yaml..."
       - |
         cat <<EOF > appspec.yaml
         version: 1
@@ -53,10 +56,57 @@ phases:
               Type: AWS::ECS::Service
               Properties:
                 LoadBalancerInfo:
-                  ContainerName: "MyContainer"
-                  ContainerPort: 3000
+                  ContainerName: "$CONTAINER_NAME"
+                  ContainerPort: $CONTAINER_PORT
         EOF
+
+      - echo "Creating task-definition.json..."
+      - |
+        cat <<EOF > task-definition.json
+        {
+          "family": "$TASK_FAMILY",
+          "networkMode": "awsvpc",
+          "containerDefinitions": [
+            {
+              "name": "$CONTAINER_NAME",
+              "image": "$REPOSITORY_URI:$IMAGE_TAG",
+              "essential": true,
+              "portMappings": [
+                {
+                  "containerPort": $CONTAINER_PORT,
+                  "protocol": "tcp"
+                }
+              ],
+              "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                  "awslogs-group": "$LOG_GROUP",
+                  "awslogs-region": "$AWS_DEFAULT_REGION",
+                  "awslogs-stream-prefix": "ecs"
+                }
+              }
+            }
+          ],
+          "requiresCompatibilities": ["FARGATE"],
+          "cpu": "256",
+          "memory": "512",
+          "executionRoleArn": "$EXECUTION_ROLE_ARN",
+          "taskRoleArn": "$TASK_ROLE_ARN"
+        }
+        EOF
+
+      # Verify files were created correctly
+      - echo "Generated files:"
+      - ls -la
+      - echo "Task definition content:"
+      - cat task-definition.json
+      - echo "AppSpec content:"
+      - cat appspec.yaml
+
 artifacts:
   files:
     - appspec.yaml
     - imagedefinitions.json
+    - task-definition.json  # CRITICAL ADDITION
+  name: Artifact_Build_BuildDockerImage
+  discard-paths: yes
