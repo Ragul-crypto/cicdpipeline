@@ -96,5 +96,4 @@ artifacts:
     - appspec.yaml
     - imagedefinitions.json
     - task-definition.json
-  name: Artifact_Build_BuildDockerImage
   discard-paths: yes
