@@ -2,10 +2,10 @@ version: 0.2
 
 env:
   variables:
-    REPOSITORY_NAME: "test"
+    REPOSITORY_NAME: "cicdpipeline"  # Make sure this matches your ECR repo
     AWS_DEFAULT_REGION: "us-east-1"
     CONTAINER_NAME: "MyContainer"
-    CONTAINER_PORT: "3000"  # Changed from 80 to match your appspec
+    CONTAINER_PORT: "3000"
     TASK_FAMILY: "InfraStackMyTaskDef93E1369E"
     EXECUTION_ROLE_ARN: "arn:aws:iam::535002855046:role/InfraStack-MyTaskDefExecutionRole7C814C05-KZYilu3n8JhM"
     TASK_ROLE_ARN: "arn:aws:iam::535002855046:role/InfraStack-MyTaskDefTaskRole727F9D3B-iQmuvZC0GByO"
@@ -24,7 +24,7 @@ phases:
   pre_build:
     commands:
       - echo "Setting up ECR repository URI..."
-      - REPOSITORY_URI="535002855046.dkr.ecr.us-east-1.amazonaws.com/cicdpipeline"
+      - REPOSITORY_URI="535002855046.dkr.ecr.us-east-1.amazonaws.com/$REPOSITORY_NAME"
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=${COMMIT_HASH:=latest}
       - echo "ECR URI: $REPOSITORY_URI"
@@ -43,45 +43,40 @@ phases:
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       - docker push $REPOSITORY_URI:latest
 
-      # Generate REQUIRED ECS deployment files
       - echo "Creating imagedefinitions.json..."
       - echo "[{\"name\":\"$CONTAINER_NAME\",\"imageUri\":\"$REPOSITORY_URI:$IMAGE_TAG\"}]" > imagedefinitions.json
 
       - echo "Creating appspec.yaml..."
-      - |
-        cat <<EOF > appspec.yaml
-        version: 1
-        Resources:
-          - TargetService:
-              Type: AWS::ECS::Service
-              Properties:
-                LoadBalancerInfo:
-                  ContainerName: "$CONTAINER_NAME"
-                  ContainerPort: $CONTAINER_PORT
-        EOF
+      - echo "version: 1" > appspec.yaml
+      - echo "Resources:" >> appspec.yaml
+      - echo "  - TargetService:" >> appspec.yaml
+      - echo "      Type: AWS::ECS::Service" >> appspec.yaml
+      - echo "      Properties:" >> appspec.yaml
+      - echo "        LoadBalancerInfo:" >> appspec.yaml
+      - echo "          ContainerName: \"$CONTAINER_NAME\"" >> appspec.yaml
+      - echo "          ContainerPort: $CONTAINER_PORT" >> appspec.yaml
 
       - echo "Creating task-definition.json..."
       - |
-        cat <<EOF > task-definition.json
-        {
-          "family": "$TASK_FAMILY",
+        echo '{
+          "family": "'"$TASK_FAMILY"'",
           "networkMode": "awsvpc",
           "containerDefinitions": [
             {
-              "name": "$CONTAINER_NAME",
-              "image": "$REPOSITORY_URI:$IMAGE_TAG",
+              "name": "'"$CONTAINER_NAME"'",
+              "image": "'"$REPOSITORY_URI:$IMAGE_TAG"'",
               "essential": true,
               "portMappings": [
                 {
-                  "containerPort": $CONTAINER_PORT,
+                  "containerPort": '"$CONTAINER_PORT"',
                   "protocol": "tcp"
                 }
               ],
               "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
-                  "awslogs-group": "$LOG_GROUP",
-                  "awslogs-region": "$AWS_DEFAULT_REGION",
+                  "awslogs-group": "'"$LOG_GROUP"'",
+                  "awslogs-region": "'"$AWS_DEFAULT_REGION"'",
                   "awslogs-stream-prefix": "ecs"
                 }
               }
@@ -90,12 +85,10 @@ phases:
           "requiresCompatibilities": ["FARGATE"],
           "cpu": "256",
           "memory": "512",
-          "executionRoleArn": "$EXECUTION_ROLE_ARN",
-          "taskRoleArn": "$TASK_ROLE_ARN"
-        }
-        EOF
+          "executionRoleArn": "'"$EXECUTION_ROLE_ARN"'",
+          "taskRoleArn": "'"$TASK_ROLE_ARN"'"
+        }' > task-definition.json
 
-      # Verify files were created correctly
       - echo "Generated files:"
       - ls -la
       - echo "Task definition content:"
@@ -107,6 +100,6 @@ artifacts:
   files:
     - appspec.yaml
     - imagedefinitions.json
-    - task-definition.json  # CRITICAL ADDITION
+    - task-definition.json
   name: Artifact_Build_BuildDockerImage
   discard-paths: yes
