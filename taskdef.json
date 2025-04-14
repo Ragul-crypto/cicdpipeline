@@ -1,0 +1,29 @@
+{
+  "family": "cicdpipeline-taskdef",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::<your-account-id>:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "Mycontainer",
+      "image": "535002855046.dkr.ecr.us-east-1.amazonaws.com/cicdpipeline:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/cicdpipeline",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}
