@@ -60,5 +60,5 @@ phases:
 artifacts:
   files:
     - appspec.yaml
-    - imagedefinitions.json
+    - TaskDefinitionTemplatePath
     - taskdef.json
