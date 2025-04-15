@@ -57,6 +57,8 @@ phases:
                   ContainerName: "MyContainer"
                   ContainerPort: 80
         EOF
+      - echo "Listing all files in current directory:"
+      - ls -alh
 artifacts:
   files:
     - appspec.yaml
