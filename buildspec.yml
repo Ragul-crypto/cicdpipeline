@@ -62,5 +62,4 @@ artifacts:
     - appspec.yaml
     - imagedefinitions.json
     - taskdef.json
-  name: BuildOutput
-  base-directory: .
+
