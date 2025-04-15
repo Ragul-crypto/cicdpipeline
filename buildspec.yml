@@ -57,6 +57,28 @@ phases:
                   ContainerName: "MyContainer"
                   ContainerPort: 80
         EOF
+         echo Writing taskdef.json...
+    - |
+      cat <<EOF > taskdef.json
+      {
+        "family": "YOUR_TASK_DEF_NAME",
+        "containerDefinitions": [
+          {
+            "name": "MyContainer",
+            "image": "$REPOSITORY_URI:$IMAGE_TAG",
+            "cpu": 256,
+            "memory": 512,
+            "essential": true,
+            "portMappings": [
+              {
+                "containerPort": 80,
+                "hostPort": 80
+              }
+            ]
+          }
+        ]
+      }
+      EOF
 artifacts:
   files:
     - appspec.yaml
