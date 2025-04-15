@@ -63,4 +63,4 @@ artifacts:
   files:
     - appspec.yaml
     - imagedefinitions.json
-    - taskdef.json
+      TaskDefinitionTemplatePath
