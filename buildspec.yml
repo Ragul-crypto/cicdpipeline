@@ -61,7 +61,7 @@ phases:
     - |
       cat <<EOF > taskdef.json
       {
-        "family": "YOUR_TASK_DEF_NAME",
+        "family": "cicdpipeline-taskdef",
         "containerDefinitions": [
           {
             "name": "MyContainer",
