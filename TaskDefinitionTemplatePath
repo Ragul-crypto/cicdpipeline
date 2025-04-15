@@ -7,7 +7,7 @@
   "executionRoleArn": "arn:aws:iam::535002855046:role/ecspipeline",
   "containerDefinitions": [
     {
-      "name": "Mycontainer",
+      "name": "MyContainer",
       "image": "535002855046.dkr.ecr.us-east-1.amazonaws.com/cicdpipeline:latest",
       "essential": true,
       "portMappings": [
