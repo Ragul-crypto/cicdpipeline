@@ -43,7 +43,7 @@ phases:
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       - echo "Creating imagedefinitions.json for ECS (optional)..."
-      - echo "[{\"name\":\"MyContainer\",\"imageUri\":\"$REPOSITORY_URI:$IMAGE_TAG\"}]" 
+      - echo "[{\"name\":\"MyContainer\",\"imageUri\":\"$REPOSITORY_URI:$IMAGE_TAG\"}]" > imagedefinitions.json
       - echo Writing appspec.yaml...
       - |
         cat <<EOF > appspec.yaml
@@ -60,5 +60,5 @@ phases:
 artifacts:
   files:
     - appspec.yaml
-    - TaskDefinitionTemplatePath
+    - imagedefinitions.json
     - taskdef.json
