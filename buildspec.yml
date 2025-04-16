@@ -35,8 +35,6 @@ phases:
       - echo "Pushing Docker image to ECR..."
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$IMAGE_TAG
-      - TASK_DEFINITION_ARN=$(aws ecs describe-task-definition --task-definition cicdpipeline-taskdef --query 'taskDefinition.taskDefinitionArn' --output text)
-      - echo "Latest Task Definition ARN: $TASK_DEFINITION_ARN
       - echo "Creating imagedefinitions.json..."
       - echo "[{\"name\":\"MyContainer\",\"imageUri\":\"$REPOSITORY_URI:$IMAGE_TAG\"}]" > imagedefinitions.json
       - echo "Creating appspec.yaml..."
