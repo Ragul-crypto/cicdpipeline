@@ -38,50 +38,52 @@ phases:
       - echo "Latest Task Definition ARN: $TASK_DEFINITION_ARN"
 
       # Generate appspec.yaml with dynamic ARN
-      - cat > appspec.yaml <<EOF
-version: 0.0
-Resources:
-  - TargetService:
-      Type: AWS::ECS::Service
-      Properties:
-        TaskDefinition: "$TASK_DEFINITION_ARN"
-        LoadBalancerInfo:
-          ContainerName: "MyContainer"
-          ContainerPort: 80
-EOF
+      - |
+        cat <<'EOF' > appspec.yaml
+        version: 0.0
+        Resources:
+          - TargetService:
+              Type: AWS::ECS::Service
+              Properties:
+                TaskDefinition: "$TASK_DEFINITION_ARN"
+                LoadBalancerInfo:
+                  ContainerName: "MyContainer"
+                  ContainerPort: 80
+        EOF
 
       # Generate task definition template
-      - cat > TaskDefinitionTemplatePath.json <<EOF
-{
-  "family": "cicdpipeline-taskdef",
-  "networkMode": "awsvpc",
-  "requiresCompatibilities": ["FARGATE"],
-  "cpu": "256",
-  "memory": "512",
-  "executionRoleArn": "arn:aws:iam::535002855046:role/ecspipeline",
-  "containerDefinitions": [
-    {
-      "name": "MyContainer",
-      "image": "$REPOSITORY_URI:$IMAGE_TAG",
-      "essential": true,
-      "portMappings": [
+      - |
+        cat <<'EOF' > TaskDefinitionTemplatePath.json
         {
-          "containerPort": 80,
-          "protocol": "tcp"
+          "family": "cicdpipeline-taskdef",
+          "networkMode": "awsvpc",
+          "requiresCompatibilities": ["FARGATE"],
+          "cpu": "256",
+          "memory": "512",
+          "executionRoleArn": "arn:aws:iam::535002855046:role/ecspipeline",
+          "containerDefinitions": [
+            {
+              "name": "MyContainer",
+              "image": "$REPOSITORY_URI:$IMAGE_TAG",
+              "essential": true,
+              "portMappings": [
+                {
+                  "containerPort": 80,
+                  "protocol": "tcp"
+                }
+              ],
+              "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                  "awslogs-group": "/ecs/cicdpipeline",
+                  "awslogs-region": "us-east-1",
+                  "awslogs-stream-prefix": "ecs"
+                }
+              }
+            }
+          ]
         }
-      ],
-      "logConfiguration": {
-        "logDriver": "awslogs",
-        "options": {
-          "awslogs-group": "/ecs/cicdpipeline",
-          "awslogs-region": "us-east-1",
-          "awslogs-stream-prefix": "ecs"
-        }
-      }
-    }
-  ]
-}
-EOF
+        EOF
 
       # Generate imagedefinitions.json for CodePipeline
       - echo "[{\"name\":\"MyContainer\",\"imageUri\":\"$REPOSITORY_URI:$IMAGE_TAG\"}]" > imagedefinitions.json
