@@ -1,59 +1,60 @@
 version: 0.2
 env:
   variables:
-    REPOSITORY_NAME: "test"
+    REPOSITORY_NAME: test
 phases:
   install:
-    runtime-versions:
+    runtime-version:
       python: 3.9
     commands:
-      - echo "Installing dependencies..."
+      - echo "Installing dependencies and running tests..."
+      - echo Logging in to Amazon ECR...
+      - apt-key adv --refresh-keys --keyserver keyserver.ubuntu.com
+      - rm -rf /etc/apt/source.list.d/sbt.list
       - apt-get update -y
       - python --version
       - pip install --upgrade pip
       - pip install awscli --upgrade
-
   pre_build:
     commands:
-      - echo "Logging in to ECR..."
+      - echo Entered the pre_build phase...
       - REPOSITORY_URI=535002855046.dkr.ecr.us-east-1.amazonaws.com/cicdpipeline
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=${COMMIT_HASH:=latest}
+      - echo "ECR URI:$REPOSITORY_URI"
+      - echo "Tag:$IMAGE_TAG"
       - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $REPOSITORY_URI
-
   build:
     commands:
-      - echo "Building Docker image..."
+      - echo Entered the build phase...
       - docker build -t $REPOSITORY_URI:latest .
       - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
-
   post_build:
     commands:
-      - echo "Pushing images to ECR..."
+      - echo Build completed
+      - echo "Pushing Docker image to ECR..."
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$IMAGE_TAG
-
-      # Get the latest task definition ARN
       - TASK_DEFINITION_ARN=$(aws ecs describe-task-definition --task-definition cicdpipeline-taskdef --query 'taskDefinition.taskDefinitionArn' --output text)
-      - echo "Latest Task Definition ARN: $TASK_DEFINITION_ARN"
-
-      # Generate appspec.yaml with dynamic ARN
+      - echo "Latest Task Definition ARN: $TASK_DEFINITION_ARN
+      - echo "Creating imagedefinitions.json..."
+      - echo "[{\"name\":\"MyContainer\",\"imageUri\":\"$REPOSITORY_URI:$IMAGE_TAG\"}]" > imagedefinitions.json
+      - echo "Creating appspec.yaml..."
       - |
-        cat <<'EOF' > appspec.yaml
-        version: 0.0
+        cat <<EOF > appspec.yaml
+        version: 1
         Resources:
           - TargetService:
               Type: AWS::ECS::Service
               Properties:
-                TaskDefinition: "$TASK_DEFINITION_ARN"
+                TaskDefinition: "arn:aws:ecs:us-east-1:535002855046:task-definition/InfraStackMyTaskDef93E1369E:19"
                 LoadBalancerInfo:
                   ContainerName: "MyContainer"
                   ContainerPort: 80
         EOF
-
-      # Generate task definition template
+      - echo "Writing TaskDefinitionTemplatePath.json..."
       - |
-        cat <<'EOF' > TaskDefinitionTemplatePath.json
+        cat <<EOF > TaskDefinitionTemplatePath.json
         {
           "family": "cicdpipeline-taskdef",
           "networkMode": "awsvpc",
@@ -84,21 +85,10 @@ phases:
           ]
         }
         EOF
-
-      # Generate imagedefinitions.json for CodePipeline
-      - echo "[{\"name\":\"MyContainer\",\"imageUri\":\"$REPOSITORY_URI:$IMAGE_TAG\"}]" > imagedefinitions.json
-
-      # Verify files
-      - echo "Generated deployment files:"
+      - echo "Listing all files:"
       - ls -alh
-      - echo "appspec.yaml content:"
-      - cat appspec.yaml
-      - echo "TaskDefinitionTemplatePath.json content:"
-      - cat TaskDefinitionTemplatePath.json
-
 artifacts:
   files:
     - appspec.yaml
     - imagedefinitions.json
     - TaskDefinitionTemplatePath.json
-  name: deployment-artifacts
