@@ -67,7 +67,7 @@ phases:
               "essential": true,
               "portMappings": [
                 {
-                  "containerPort": 80,
+                  "containerPort": 443,
                   "protocol": "tcp"
                 }
               ],
