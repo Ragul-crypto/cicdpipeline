@@ -45,7 +45,7 @@ phases:
           - TargetService:
               Type: AWS::ECS::Service
               Properties:
-                TaskDefinition: "arn:aws:ecs:us-east-1:535002855046:task-definition/cicdpipeline-taskdef:32"
+                TaskDefinition: "arn:aws:ecs:us-east-1:535002855046:task-definition/cicdpipeline-taskdef:42"
                 LoadBalancerInfo:
                   ContainerName: "MyContainer"
                   ContainerPort: 80
