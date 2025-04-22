@@ -2,9 +2,8 @@ from flask import Flask
 
 app = Flask(__name__)
 
-@app.route("/", defaults={"path": ""})
-@app.route("/<path:path>")
-def catch_all(path):
+@app.route("/")
+def home():
     return "Hello from the Ragul to the World!"
 
 if __name__ == '__main__':
