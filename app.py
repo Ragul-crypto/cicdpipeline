@@ -2,7 +2,7 @@ from flask import Flask
 
 app = Flask(__name__)
 
-@app.route("/")
+@app.route("/favicon.ico")
 def home():
     return "Hello from the Ragul to the World!"
 
