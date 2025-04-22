@@ -2,14 +2,15 @@ from flask import Flask
 
 app = Flask(__name__)
 
+# Catch root path
 @app.route("/")
-def home():
+def index():
     return "Hello from the Ragul to the World!"
 
-# Catch-all route for anything else
-@app.route("/<path:path>")
-def catch_all(path):
-    return f"Catch-all hit! Path: /{path} — Hello from Ragul!"
+# Catch all other paths
+@app.route("/<path:dummy>")
+def catch_all(dummy):
+    return f"Hello from the Ragul to the World! (You hit /{dummy})"
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=80)
